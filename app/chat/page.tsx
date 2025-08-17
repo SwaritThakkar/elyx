@@ -4,9 +4,11 @@ import { ChatView } from "@/components/chat-view"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
 import Link from "next/link"
+import { Analytics } from "@vercel/analytics/next"
 
 export default function ChatPage() {
   return (
+  
     <div className="min-h-screen bg-background flex flex-col gap-4 p-4">
       {/* Header */}
       <header className="h-16 glass rounded-smooth flex items-center justify-between px-6">
@@ -16,6 +18,7 @@ export default function ChatPage() {
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Timeline
             </Button>
+            <Analytics/>
           </Link>
           <div>
             <h1 className="text-xl font-bold font-space-grotesk text-neon-cyan">Chat View</h1>

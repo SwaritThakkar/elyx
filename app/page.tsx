@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { MessageCircle } from "lucide-react"
 import Link from "next/link"
 import type { TimelineEvent } from "@/lib/sample-data"
+import { Analytics } from "@vercel/analytics/next"
 
 export default function HomePage() {
   const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null)
@@ -26,6 +27,7 @@ export default function HomePage() {
 
       {/* Main Timeline Area */}
       <div className="flex-1 flex flex-col gap-4 h-screen">
+        <Analytics/>
         <header className="h-16 glass rounded-smooth flex items-center justify-between px-6">
           <div>
             <h1 className="text-xl font-bold font-space-grotesk text-neon-cyan">Elyx Life Analytics</h1>
