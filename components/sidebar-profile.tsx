@@ -1,9 +1,47 @@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { MapPin, Plane, Activity } from "lucide-react"
+import { MapPin, Plane, Activity, MessageCircle } from "lucide-react"
+import { sampleEvents, sampleChatMessages } from "@/lib/sample-data"
+export function SidebarProfile({ selectedMonth }: { selectedMonth: number }) {
+  // Event category definitions
+  const eventTypes = [
+    { type: "message", label: "Messages", color: "text-neon-green" },
+    { type: "lab", label: "Lab Results", color: "text-neon-magenta" },
+    { type: "plan", label: "Plans", color: "text-neon-blue" },
+    { type: "device", label: "Device Data", color: "text-rachel" },
+    { type: "decision", label: "Decisions", color: "text-neon-purple" },
+  ]
+  // Get month/year
+  const months = [
+    { month: 0, year: 2025 },
+    { month: 1, year: 2025 },
+    { month: 2, year: 2025 },
+    { month: 3, year: 2025 },
+    { month: 4, year: 2025 },
+    { month: 5, year: 2025 },
+    { month: 6, year: 2025 },
+    { month: 7, year: 2025 },
+  ]
+  const { month, year } = months[selectedMonth] || months[0]
+  // Filter events for selected month
+  const monthEvents = sampleEvents.filter(
+    (event: any) => event.date.getMonth() === month && event.date.getFullYear() === year
+  )
+  // Count by type
+  const eventCounts: Record<string, number> = {}
+  eventTypes.forEach(({ type }) => {
+    eventCounts[type] = monthEvents.filter((e: any) => e.type === type).length
+  })
+  // Count chat messages for the selected month and year
+  const monthMessages = sampleChatMessages.filter(
+    (msg: any) => {
+      const ts = msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp)
+      return ts.getMonth() === month && ts.getFullYear() === year && msg.type === "text"
+    }
+  )
+  const messageCount = monthMessages.length
 
-export function SidebarProfile() {
   return (
     <div className="p-6 space-y-6">
       {/* Profile Card */}
@@ -40,31 +78,35 @@ export function SidebarProfile() {
         </CardContent>
       </Card>
 
-      {/* Care Pillars */}
-      <Card className="glass">
-        <CardHeader>
-          <h3 className="font-semibold font-space-grotesk text-neon-cyan">Care Pillars</h3>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {[
-            { name: "Chassis", desc: "Physical", color: "text-ruby" },
-            { name: "Fuel", desc: "Nutrition", color: "text-warren" },
-            { name: "Battery", desc: "Energy", color: "text-rachel" },
-            { name: "Software", desc: "Mind", color: "text-advik" },
-            { name: "Networking", desc: "Social", color: "text-carla" },
-          ].map((pillar) => (
-            <div key={pillar.name} className="flex items-center justify-between">
-              <div>
-                <div className={`font-medium ${pillar.color}`}>{pillar.name}</div>
-                <div className="text-xs text-muted-foreground">{pillar.desc}</div>
-              </div>
-              <div className="h-2 w-16 bg-secondary rounded-full overflow-hidden">
-                <div className={`h-full bg-current ${pillar.color} opacity-60`} style={{ width: "50%" }} />
-              </div>
+      {/* Monthly Contact Stats */}
+        <Card className="glass">
+          <CardHeader>
+            <h3 className="font-semibold font-space-grotesk text-neon-cyan flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-neon-cyan" />
+              Points of Contact
+            </h3>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {/* Only one Messages field, using chat message count */}
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-neon-green">Messages</span>
+              <Badge variant="secondary" className="bg-neon-green/10 text-neon-green border-neon-green/30">
+                {messageCount}
+              </Badge>
             </div>
-          ))}
-        </CardContent>
-      </Card>
+            {/* All other non-message event types from timeline events */}
+            {eventTypes
+              .filter(et => et.type !== 'message')
+              .map(({ type, label, color }) => (
+                <div key={type} className="flex items-center justify-between">
+                  <span className={`text-sm ${color}`}>{label}</span>
+                  <Badge variant="secondary" className={`${color} bg-current/10 border-current/30`}>
+                    {eventCounts[type]}
+                  </Badge>
+                </div>
+              ))}
+          </CardContent>
+        </Card>
     </div>
   )
 }

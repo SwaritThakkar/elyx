@@ -12,10 +12,11 @@ import { DecisionProvenanceModal } from "./decision-provenance-modal"
 
 interface TimelineViewProps {
   onEventSelect?: (event: TimelineEvent) => void
+  selectedMonth: number
+  setSelectedMonth: (m: number) => void
 }
 
-export function TimelineView({ onEventSelect }: TimelineViewProps) {
-  const [selectedMonth, setSelectedMonth] = useState([4])
+export function TimelineView({ onEventSelect, selectedMonth, setSelectedMonth }: TimelineViewProps) {
   const [activeFilters, setActiveFilters] = useState<string[]>(["all"])
   const [zoomLevel, setZoomLevel] = useState(1)
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null)
@@ -43,8 +44,7 @@ export function TimelineView({ onEventSelect }: TimelineViewProps) {
     }
 
   // Filter to the exact month selected by the slider
-  const centerMonth = selectedMonth[0]
-  events = events.filter((event) => event.date.getMonth() === centerMonth)
+  events = events.filter((event) => event.date.getMonth() === selectedMonth)
 
     return events
   }, [activeFilters, selectedMonth])
@@ -154,8 +154,8 @@ export function TimelineView({ onEventSelect }: TimelineViewProps) {
               <label className="text-sm font-medium text-foreground">Timeline Focus</label>
               <div className="px-2">
                 <Slider
-                  value={selectedMonth}
-                  onValueChange={setSelectedMonth}
+                  value={[selectedMonth]}
+                  onValueChange={([m]) => setSelectedMonth(m)}
                   max={7}
                   min={0}
                   step={1}
@@ -163,7 +163,7 @@ export function TimelineView({ onEventSelect }: TimelineViewProps) {
                 />
                 <div className="flex justify-between text-xs text-muted-foreground mt-2">
                   {months.map((month, index) => (
-                    <span key={month} className={index === selectedMonth[0] ? "text-neon-cyan font-medium" : ""}>
+                    <span key={month} className={index === selectedMonth ? "text-neon-cyan font-medium" : ""}>
                       {month.slice(0, 3)}
                     </span>
                   ))}
@@ -192,7 +192,7 @@ export function TimelineView({ onEventSelect }: TimelineViewProps) {
             <Card className="glass">
               <CardHeader>
                   <CardTitle className="text-neon-cyan font-space-grotesk flex items-center justify-between">
-                  Interactive Timeline - {months[selectedMonth[0]]}
+                  Interactive Timeline - {months[selectedMonth]}
                   <Badge variant="secondary" className="text-neon-cyan">
                     {filteredEvents.length} events
                   </Badge>

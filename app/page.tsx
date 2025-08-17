@@ -1,3 +1,4 @@
+
 "use client"
 
 import { useState } from "react"
@@ -11,18 +12,20 @@ import type { TimelineEvent } from "@/lib/sample-data"
 
 export default function HomePage() {
   const [selectedEvent, setSelectedEvent] = useState<TimelineEvent | null>(null)
+  // Month slider state (sync with TimelineView logic)
+  const [selectedMonth, setSelectedMonth] = useState(4)
 
   return (
     <div className="h-screen overflow-hidden bg-background flex gap-4 p-4">
-  {/* Left Sidebar */}
-  <div className="w-80 glass rounded-smooth-lg overflow-hidden h-screen">
+      {/* Left Sidebar */}
+      <div className="w-80 glass rounded-smooth-lg overflow-hidden h-screen">
         <div className="h-full overflow-y-auto scroll-smooth-panel">
-          <SidebarProfile />
+          <SidebarProfile selectedMonth={selectedMonth} />
         </div>
       </div>
 
-  {/* Main Timeline Area */}
-  <div className="flex-1 flex flex-col gap-4 h-screen">
+      {/* Main Timeline Area */}
+      <div className="flex-1 flex flex-col gap-4 h-screen">
         <header className="h-16 glass rounded-smooth flex items-center justify-between px-6">
           <div>
             <h1 className="text-xl font-bold font-space-grotesk text-neon-cyan">Elyx Life Analytics</h1>
@@ -47,7 +50,7 @@ export default function HomePage() {
 
         <div className="flex-1 glass rounded-smooth-lg overflow-hidden h-full">
           <div className="h-full overflow-y-auto scroll-smooth-panel">
-            <TimelineView onEventSelect={setSelectedEvent} />
+            <TimelineView onEventSelect={setSelectedEvent} selectedMonth={selectedMonth} setSelectedMonth={setSelectedMonth} />
           </div>
         </div>
       </div>
