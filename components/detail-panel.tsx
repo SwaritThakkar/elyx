@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { MessageCircle, Clock, MapPin, TrendingUp, Users, Brain } from "lucide-react"
 import { type TimelineEvent, roleColors, sampleChatMessages, sampleDecisionProvenance } from "@/lib/sample-data"
 import { ChatView } from "./chat-view"
+import { DecisionProvenanceModal } from "./decision-provenance-modal"
 
 interface DetailPanelProps {
   selectedEvent?: TimelineEvent | null
@@ -37,231 +38,96 @@ export function DetailPanel({ selectedEvent }: DetailPanelProps) {
   const provForSelected = provKeyForSelected ? sampleDecisionProvenance[provKeyForSelected] : undefined
   const hasProvenance = !!provForSelected
 
+  // Always show all messages. If event selected, scroll to first message from that date.
+  const messagesToShow = sampleChatMessages;
+  let scrollToDate: string | undefined = undefined;
+  if (selectedEvent && selectedEvent.date) {
+    scrollToDate = selectedEvent.date instanceof Date ? selectedEvent.date.toDateString() : selectedEvent.date;
+  }
+
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-6 border-b border-border/50">
-        <h2 className="text-lg font-bold font-space-grotesk text-neon-cyan">Detail View</h2>
-        <p className="text-sm text-muted-foreground">
-          {selectedEvent ? "Event details and context" : "Select timeline items to explore"}
-        </p>
-      </div>
-
-      {selectedEvent ? (
-        <div className="flex-1 flex flex-col">
-          {/* Event Header */}
-          <div className="p-6 border-b border-border/50">
+    <div className="h-screen flex flex-col relative overflow-hidden">
+      {/* Always show header/tabs/content */}
+      <div className="flex flex-col h-full">
+        {/* Header / summary - stays on top */}
+        <div className="sticky top-0 z-20 bg-background">
+          <div className="flex-none p-6 border-b border-border/50">
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="capitalize">
-                    {selectedEvent.type}
-                  </Badge>
-                  {hasProvenance && (
-                    <Badge variant="outline" className="text-neon-purple border-neon-purple/30">
-                      <Brain className="h-3 w-3 mr-1" />
-                      Provenance Available
-                    </Badge>
+              {selectedEvent ? (
+                <>
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Clock className="h-3 w-3" />
+                      {selectedEvent.date && typeof selectedEvent.date !== "string"
+                        ? selectedEvent.date.toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : ""}
+                    </div>
+                  </div>
+                  <h3 className="font-semibold text-foreground">{selectedEvent.title}</h3>
+                  {selectedEvent.sender && (
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4 text-muted-foreground" />
+                      <span
+                        className={`text-sm font-medium ${roleColors[selectedEvent.sender as keyof typeof roleColors] || "text-foreground"}`}
+                      >
+                        {selectedEvent.sender}
+                      </span>
+                    </div>
                   )}
-                </div>
-                <div className="text-xs text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-3 w-3" />
-                  {selectedEvent.date.toLocaleDateString("en-US", {
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
-                </div>
-              </div>
-
-              <h3 className="font-semibold text-foreground">{selectedEvent.title}</h3>
-
-              {selectedEvent.sender && (
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span
-                    className={`text-sm font-medium ${roleColors[selectedEvent.sender as keyof typeof roleColors] || "text-foreground"}`}
-                  >
-                    {selectedEvent.sender}
-                  </span>
-                </div>
+                </>
+              ) : (
+                <span className="text-muted-foreground">All messages</span>
               )}
             </div>
           </div>
-
-          {/* Tabs */}
-          <div className="border-b border-border/50">
+          {/* Tabs - also fixed under header */}
+          <div className="flex-none border-b border-border/50">
             <div className="flex">
               {[
                 { id: "chat", label: "Messages", icon: MessageCircle },
                 { id: "provenance", label: "Provenance", icon: TrendingUp, disabled: !hasProvenance },
                 { id: "context", label: "Context", icon: MapPin },
               ].map((tab) => {
-                const Icon = tab.icon
+                const Icon = tab.icon;
+                const active = activeTab === (tab.id as any);
                 return (
-                  <Button
+                  <button
                     key={tab.id}
-                    variant={activeTab === tab.id ? "default" : "ghost"}
-                    size="sm"
-                    disabled={tab.disabled}
                     onClick={() => setActiveTab(tab.id as any)}
-                    className={`rounded-none border-b-2 ${
-                      activeTab === tab.id ? "border-neon-cyan text-neon-cyan" : "border-transparent"
-                    } ${tab.disabled ? "opacity-50" : ""}`}
+                    disabled={tab.disabled}
+                    className={`px-4 py-3 text-sm flex items-center gap-2 ${active ? "font-semibold" : "text-muted-foreground"}`}
                   >
-                    <Icon className="h-4 w-4 mr-2" />
+                    <Icon className="h-4 w-4" />
                     {tab.label}
-                  </Button>
-                )
+                  </button>
+                );
               })}
             </div>
           </div>
-
-          {/* Tab Content */}
-          <div className="flex-1 overflow-hidden">
-            {activeTab === "chat" && (
-              <ChatView
-                messages={sampleChatMessages.filter(
-                  (msg) =>
-                    // Show messages around the selected event date
-                    Math.abs(msg.timestamp.getTime() - selectedEvent.date.getTime()) < 7 * 24 * 60 * 60 * 1000,
-                )}
-                className="border-0"
-              />
-            )}
-
-                {activeTab === "provenance" && hasProvenance && provForSelected && (
-              <ScrollArea className="h-full p-6">
-                <div className="space-y-4">
-                  <Card className="glass">
-                    <CardHeader>
-                      <CardTitle className="text-sm text-neon-purple flex items-center gap-2">
-                        <Brain className="h-4 w-4" />
-                        Decision Summary
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Decision Maker</span>
-                              <span className="text-sm text-foreground">{provForSelected.decisionMaker}</span>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Confidence</span>
-                          <Badge variant="outline" className="text-neon-green">
-                            {provForSelected.confidence}%
-                          </Badge>
-                        </div>
-                      </div>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{provForSelected.reasoning}</p>
-                      <div className="pt-2">
-                        <p className="text-xs text-muted-foreground mb-2">Evidence Sources:</p>
-                        <div className="space-y-1">
-                          {provForSelected.evidenceSources.slice(0, 3).map((evidence, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <div className="w-1.5 h-1.5 rounded-full bg-neon-cyan" />
-                              <span className="text-xs text-foreground">{evidence.source}</span>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </ScrollArea>
-            )}
-
-            {activeTab === "context" && (
-              <ScrollArea className="h-full p-6">
-                <div className="space-y-4">
-                  <Card className="glass">
-                    <CardHeader>
-                      <CardTitle className="text-sm text-neon-blue">Contextual Information</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Location</span>
-                        <span className="text-sm text-foreground">Singapore</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Travel Status</span>
-                        <Badge variant="secondary" className="text-neon-blue">
-                          Home Base
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Program Day</span>
-                        <span className="text-sm text-foreground">
-                          Day{" "}
-                          {Math.floor(
-                            (selectedEvent.date.getTime() - new Date("2024-01-15").getTime()) / (1000 * 60 * 60 * 24),
-                          )}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Severity</span>
-                        <Badge
-                          variant={
-                            selectedEvent.severity === "high"
-                              ? "destructive"
-                              : selectedEvent.severity === "medium"
-                                ? "default"
-                                : "secondary"
-                          }
-                        >
-                          {selectedEvent.severity}
-                        </Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-              </ScrollArea>
-            )}
-          </div>
         </div>
-      ) : (
-        <ScrollArea className="flex-1 p-6">
-          <div className="space-y-4">
-            {/* Default State */}
-            <Card className="glass">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <MessageCircle className="h-4 w-4 text-neon-green" />
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">
-                  Click on any event in the timeline to see detailed information, related messages, and decision
-                  provenance.
-                </p>
-                <p className="text-xs text-neon-purple">
-                  Decision events marked with * have detailed provenance data available.
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card className="glass">
-              <CardHeader>
-                <CardTitle className="text-sm text-neon-magenta">Quick Stats</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Total Messages</span>
-                  <span className="text-neon-green">127</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Lab Results</span>
-                  <span className="text-neon-magenta">8</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Decisions Made</span>
-                  <span className="text-neon-purple">23</span>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </ScrollArea>
-      )}
+        {/* Content area: always internally scrollable */}
+        <div className="flex-1 overflow-auto">
+          {activeTab === "chat" ? (
+            <div className="h-full">
+              <ChatView messages={messagesToShow} scrollToDate={scrollToDate} className="h-full" />
+            </div>
+          ) : (
+            <div className="p-6">
+              {activeTab === "provenance" && provForSelected ? (
+                <DecisionProvenanceModal isOpen={!!provForSelected} onClose={() => setActiveTab("chat")} decision={provForSelected} />
+              ) : activeTab === "context" ? (
+                <ScrollArea className="h-full">
+                  {/* context content */}
+                </ScrollArea>
+              ) : null}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
